@@ -1,5 +1,6 @@
 package com.upc.rocketnotes
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -26,21 +27,29 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 
 @Composable
 fun RegisterScreen(navController: NavHostController) {
     // Estado para almacenar los valores de los campos
-    var user by remember { mutableStateOf(TextFieldValue("")) }
-    var password by remember { mutableStateOf(TextFieldValue("")) }
-    var confirmPassword by remember { mutableStateOf(TextFieldValue("")) }
+    var user by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("")}
+    var confirmPassword by remember { mutableStateOf("") }
     val robotoFontFamily = FontFamily(Font(R.font.robotoblackitalic))
-    var selectedRole by remember { mutableStateOf("Administrador") }
+    var selectedRole by remember { mutableStateOf("ROLE_TEACHER") }
+    var isLoading by remember { mutableStateOf(false) }
+    var registrationStatus by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val authService = RetrofitClient.retrofitInstance.create(PlaceHolder::class.java) ?: throw IllegalStateException("Retrofit instance is null")
 
     // Estructura de la interfaz
     Column(
@@ -97,14 +106,14 @@ fun RegisterScreen(navController: NavHostController) {
         ) {
             RoleButton(
                 text = "Administrador",
-                isSelected = selectedRole == "Administrador",
-                onClick = { selectedRole = "Administrador" }
+                isSelected = selectedRole == "ROLE_ADMIN",
+                onClick = { selectedRole = "ROLE_ADMIN" }
             )
 
             RoleButton(
                 text = "Profesor",
-                isSelected = selectedRole == "Profesor",
-                onClick = { selectedRole = "Profesor" }
+                isSelected = selectedRole == "ROLE_TEACHER",
+                onClick = { selectedRole = "ROLE_TEACHER" }
             )
         }
 
@@ -153,7 +162,39 @@ fun RegisterScreen(navController: NavHostController) {
 
         // Botón: Registrarse
         Button(
-            onClick = { /* Acción para registrarse */ },
+            onClick = {
+                if (password != confirmPassword) {
+                    Toast.makeText(context, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
+
+                isLoading = true
+
+                // Verificar valores antes de enviar la solicitud
+                println("Usser: $user")
+                println("Password: $password")
+                println("Selected Role: $selectedRole")
+
+                val signUpResource = SignUpResource(user, password, listOf(selectedRole))
+                authService.signUp(signUpResource).enqueue(object : Callback<UserResource> {
+                    override fun onResponse(call: Call<UserResource>, response: Response<UserResource>) {
+                        isLoading = false
+                        if (response.isSuccessful) {
+                            registrationStatus = "Registro exitoso"
+                            navController.navigate("login")
+                        } else {
+                            registrationStatus = "Error en el registro: ${response.message()}"
+                            Toast.makeText(context, registrationStatus, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
+                    override fun onFailure(call: Call<UserResource>, t: Throwable) {
+                        isLoading = false
+                        registrationStatus = "Fallo en la solicitud: ${t.message}"
+                        Toast.makeText(context, registrationStatus, Toast.LENGTH_SHORT).show()
+                    }
+                })
+            },
             modifier = Modifier
                 .width(290.dp)
                 .height(60.dp)
@@ -161,10 +202,19 @@ fun RegisterScreen(navController: NavHostController) {
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1EC089)),
             shape = RoundedCornerShape(5.dp)
         ) {
+            if (isLoading) {
+                CircularProgressIndicator(color = Color.White)
+            } else {
+                Text("Registrarse")
+            }
+        }
+
+        // Agrega un mensaje de estado si es necesario
+        if (registrationStatus.isNotEmpty()) {
             Text(
-                "Registrarse",
-                fontFamily = robotoFontFamily,
-                fontSize = 18.sp
+                text = registrationStatus,
+                color = Color.Red,
+                modifier = Modifier.padding(top = 16.dp)
             )
         }
 
@@ -211,11 +261,3 @@ fun RoleButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
     }
 }
 
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewRegisterScreen() {
-    RocketNotesTheme {
-
-    }
-}

@@ -1,6 +1,7 @@
 package com.upc.rocketnotes
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -31,6 +32,11 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.navigation.NavHostController
+import androidx.compose.ui.platform.LocalContext
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+
 
 @Composable
 fun LoginScreen(navController: NavHostController) {
@@ -38,6 +44,10 @@ fun LoginScreen(navController: NavHostController) {
     var user by remember { mutableStateOf(TextFieldValue("")) }
     var password by remember { mutableStateOf(TextFieldValue("")) }
     val robotoFontFamily = FontFamily(Font(R.font.robotoblackitalic))
+    val context = LocalContext.current
+
+    val retrofit = RetrofitClient.retrofitInstance
+    val apiService = retrofit.create(PlaceHolder::class.java)
 
     // Estructura de la interfaz
     Column(
@@ -124,7 +134,26 @@ fun LoginScreen(navController: NavHostController) {
 
         // Botón: Ingresar
         Button(
-            onClick = { /* Acción para ingresar */ },
+            onClick = {
+                val signInRequest = SignInRequest(user.text, password.text)
+                apiService.signIn(signInRequest).enqueue(object : Callback<SignInResponse> {
+                    override fun onResponse(call: Call<SignInResponse>, response: Response<SignInResponse>) {
+                        if (response.isSuccessful) {
+                            val signInResponse = response.body()
+                            if (signInResponse != null) {
+                                // Navegar a la pantalla de éxito
+                                navController.navigate("success")
+                            }
+                        } else {
+                            Toast.makeText(context, "Error en el inicio de sesión: ${response.message()}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
+                    override fun onFailure(call: Call<SignInResponse>, t: Throwable) {
+                        Toast.makeText(context, "Error de red: ${t.message}", Toast.LENGTH_SHORT).show()
+                    }
+                })
+            },
             modifier = Modifier
                 .width(290.dp)
                 .height(60.dp)
@@ -132,11 +161,9 @@ fun LoginScreen(navController: NavHostController) {
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1EC089)),
             shape = RoundedCornerShape(5.dp) // Esquinas ligeramente redondeadas
         ) {
-            Text(
-                "Ingresar",
+            Text("Ingresar",
                 fontFamily = robotoFontFamily,  // Aplicar la fuente Roboto
-                fontSize = 18.sp
-            )
+                fontSize = 18.sp)
         }
 
         // Botón: Registrarse

@@ -39,15 +39,8 @@ fun NavigationComponent() {
     NavHost(navController = navController, startDestination = "login") {
         composable("login") { LoginScreen(navController) }
         composable("register") { RegisterScreen(navController) }
+        composable("success") { SuccessScreen(navController) }
     }
 }
 
 
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewLoginScreen() {
-    RocketNotesTheme {
-
-    }
-}
