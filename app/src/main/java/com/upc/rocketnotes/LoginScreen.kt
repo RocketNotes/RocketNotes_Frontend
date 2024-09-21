@@ -37,7 +37,6 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-
 @Composable
 fun LoginScreen(navController: NavHostController) {
     // Estado para almacenar los valores del correo y la contraseña
@@ -142,7 +141,7 @@ fun LoginScreen(navController: NavHostController) {
                             val signInResponse = response.body()
                             if (signInResponse != null) {
                                 // Navegar a la pantalla de éxito
-                                navController.navigate("success")
+                                navController.navigate("home")
                             }
                         } else {
                             Toast.makeText(context, "Error en el inicio de sesión: ${response.message()}", Toast.LENGTH_SHORT).show()
