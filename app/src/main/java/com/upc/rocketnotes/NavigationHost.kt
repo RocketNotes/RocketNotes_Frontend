@@ -19,5 +19,6 @@ fun NavigationHost()
         composable("profile"){ ProfileScreen(navController) }
         composable("notifications"){ NotificationsScreen(navController) }
         composable("messages"){ MessagesScreen(navController) }
+        composable("alumnos"){ AlumnosScreen(navController) }
     }
 }
