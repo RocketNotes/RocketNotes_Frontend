@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +40,7 @@ import androidx.navigation.NavHostController
 fun AlumnosScreen(navController: NavHostController){
     var searchText by remember { mutableStateOf("") }
     var showAddStudentForm by remember { mutableStateOf(false) }
+    var showEditStudentDialog by remember { mutableStateOf<Pair<Int, String>?>(null) } // Almacena el índice y el nombre del alumno a editar
     val students = remember { mutableListOf("Juan Perez", "Ana Gomez", "Carlos Rodriguez") }
 
     Scaffold(
@@ -80,14 +82,14 @@ fun AlumnosScreen(navController: NavHostController){
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                students.forEach { student ->
+                students.forEachIndexed { index, student ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(text = student, fontSize = 20.sp)
-                        IconButton(onClick = { /* Acción de editar alumno */ }) {
+                        IconButton(onClick = { showEditStudentDialog = Pair(index, student)}) {
                             Icon(Icons.Filled.Edit, contentDescription = "Editar Alumno")
                         }
                     }
@@ -101,6 +103,22 @@ fun AlumnosScreen(navController: NavHostController){
                     onAddStudent = { newStudent ->
                         students.add(newStudent)
                         showAddStudentForm = false
+                    }
+                )
+            }
+
+            // Mostrar el diálogo de editar alumno
+            showEditStudentDialog?.let { (index, student) ->
+                EditStudentDialog(
+                    initialName = student,
+                    onDismiss = { showEditStudentDialog = null },
+                    onSaveStudent = { updatedStudent ->
+                        students[index] = updatedStudent
+                        showEditStudentDialog = null
+                    },
+                    onDeleteStudent = {
+                        students.removeAt(index)
+                        showEditStudentDialog = null
                     }
                 )
             }
@@ -166,6 +184,52 @@ fun AddStudentForm(onDismiss: () -> Unit, onAddStudent: (String) -> Unit) {
                 }
             ) {
                 Text("Agregar")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+fun EditStudentDialog(
+    initialName: String,
+    onDismiss: () -> Unit,
+    onSaveStudent: (String) -> Unit,
+    onDeleteStudent: () -> Unit
+) {
+    var updatedName by remember { mutableStateOf(initialName) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Editar Alumno") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                TextField(
+                    value = updatedName,
+                    onValueChange = { updatedName = it },
+                    label = { Text("Nombre Completo") }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                // Botón de eliminar alumno
+                OutlinedButton(
+                    onClick = onDeleteStudent,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
+                ) {
+                    Text("Eliminar Alumno")
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onSaveStudent(updatedName) }) {
+                Text("Guardar Cambios")
             }
         },
         dismissButton = {
