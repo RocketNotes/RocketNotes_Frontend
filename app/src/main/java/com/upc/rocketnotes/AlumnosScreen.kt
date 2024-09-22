@@ -3,13 +3,16 @@ package com.upc.rocketnotes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -44,9 +47,9 @@ fun AlumnosScreen(navController: NavHostController){
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddStudentForm = true },
-                containerColor = Color.Blue
+                containerColor = Color.Green
             ) {
-                Icon(Icons.Filled.AddCircle, contentDescription = "Agregar Alumno")
+                Icon(Icons.Filled.AddCircle, contentDescription = "Agregar Alumno", tint = Color.White)
             }
         }
     ) { innerPadding ->
@@ -54,7 +57,10 @@ fun AlumnosScreen(navController: NavHostController){
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .padding(20.dp)
         ) {
+            Text(text = "Lista de Alumnos",fontSize = 28.sp)
+            Spacer(modifier = Modifier.height(10.dp))
             // Barra de búsqueda y botón de agregar alumno
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -68,7 +74,7 @@ fun AlumnosScreen(navController: NavHostController){
                     label = { Text("Buscar alumno") }
                 )
             }
-
+            Spacer(modifier = Modifier.height(10.dp))
             // Lista de alumnos
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -91,11 +97,11 @@ fun AlumnosScreen(navController: NavHostController){
             // Formulario de agregar alumno
             if (showAddStudentForm) {
                 AddStudentForm(
+                    onDismiss = { showAddStudentForm = false },
                     onAddStudent = { newStudent ->
                         students.add(newStudent)
                         showAddStudentForm = false
-                    },
-                    onCancel = { showAddStudentForm = false }
+                    }
                 )
             }
         }
@@ -104,64 +110,68 @@ fun AlumnosScreen(navController: NavHostController){
 
 
 @Composable
-fun AddStudentForm(onAddStudent: (String) -> Unit, onCancel: () -> Unit) {
+fun AddStudentForm(onDismiss: () -> Unit, onAddStudent: (String) -> Unit) {
     var name by remember { mutableStateOf("") }
     var surname by remember { mutableStateOf("") }
     var dni by remember { mutableStateOf("") }
     var birthdate by remember { mutableStateOf("") }
     var assignedTeacher by remember { mutableStateOf("") }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        TextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("Nombre") }
-        )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Agregar Alumno") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                TextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nombre") }
+                )
 
-        TextField(
-            value = surname,
-            onValueChange = { surname = it },
-            label = { Text("Apellido") }
-        )
+                TextField(
+                    value = surname,
+                    onValueChange = { surname = it },
+                    label = { Text("Apellido") }
+                )
 
-        TextField(
-            value = dni,
-            onValueChange = { dni = it },
-            label = { Text("DNI") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-        )
+                TextField(
+                    value = dni,
+                    onValueChange = { dni = it },
+                    label = { Text("DNI") },
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+                )
 
-        TextField(
-            value = birthdate,
-            onValueChange = { birthdate = it },
-            label = { Text("Fecha de nacimiento (YYYY-MM-DD)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-        )
+                TextField(
+                    value = birthdate,
+                    onValueChange = { birthdate = it },
+                    label = { Text("Fecha de nacimiento (YYYY-MM-DD)") },
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+                )
 
-        TextField(
-            value = assignedTeacher,
-            onValueChange = { assignedTeacher = it },
-            label = { Text("Profesor asignado") }
-        )
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(onClick = {
-                val newStudent = "$name $surname"
-                onAddStudent(newStudent)
-            }) {
-                Text("Agregar Alumno")
+                TextField(
+                    value = assignedTeacher,
+                    onValueChange = { assignedTeacher = it },
+                    label = { Text("Profesor asignado") }
+                )
             }
-
-            OutlinedButton(onClick = onCancel) {
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val newStudent = "$name $surname"
+                    onAddStudent(newStudent)
+                }
+            ) {
+                Text("Agregar")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
                 Text("Cancelar")
             }
         }
-    }
+    )
 }
