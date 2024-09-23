@@ -38,30 +38,30 @@ import androidx.navigation.NavHostController
 @Composable
 fun ClassroomScreen(navController: NavHostController) {
     var searchText by remember { mutableStateOf("") }
-    var showAddProfessorForm by remember { mutableStateOf(false) }
-    var showEditTeacherDialog by remember { mutableStateOf<Pair<Int, Teacher>?>(null) } // Almacena el índice y el profesor a editar
-    val teachers = remember {
+    var showAddClassroomForm by remember { mutableStateOf(false) }
+    var showEditClassroomDialog by remember { mutableStateOf<Pair<Int, Classroom>?>(null) } // Almacena el índice y el profesor a editar
+    val classrooms = remember {
         mutableListOf(
-            Teacher(
-                "Pedro",
-                "Sanchez",
-                "12345678",
-                "1990-01-01",
-                "Matemáticas"
+            Classroom(
+                "123",
+                "1ero de primaria",
+                "A",
+                "30",
+
             ),
-            Teacher(
-                "Ana",
-                "Gonzalez",
-                "87654321",
-                "1985-05-15",
-                "Ciencias"
+            Classroom(
+                "342",
+                "3ero de primaria",
+                "B",
+                "35",
+
             ),
-            Teacher(
-                "Carlos",
-                "Hernandez",
-                "11223344",
-                "1980-03-20",
-                "Historia"
+            Classroom(
+                "332",
+                "3ero de primaria",
+                "A",
+                "30",
+
             )
         )
     }
@@ -71,12 +71,12 @@ fun ClassroomScreen(navController: NavHostController) {
         bottomBar = { BottomNavBar(navController = navController) },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddProfessorForm = true },
+                onClick = { showAddClassroomForm = true },
                 containerColor = Color.Green
             ) {
                 Icon(
                     Icons.Filled.AddCircle,
-                    contentDescription = "Agregar Profesor",
+                    contentDescription = "Agregar Clases",
                     tint = Color.White
                 )
             }
@@ -88,7 +88,7 @@ fun ClassroomScreen(navController: NavHostController) {
                 .padding(innerPadding)
                 .padding(20.dp)
         ) {
-            Text(text = "Lista de Profesores", fontSize = 28.sp)
+            Text(text = "Lista de Aulas", fontSize = 28.sp)
             Spacer(modifier = Modifier.height(10.dp))
 
             // Barra de búsqueda
@@ -101,61 +101,60 @@ fun ClassroomScreen(navController: NavHostController) {
                     value = searchText,
                     onValueChange = { searchText = it },
                     modifier = Modifier.weight(1f),
-                    label = { Text("Buscar profesor") }
+                    label = { Text("Buscar Aula") }
                 )
             }
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Lista de profesores
+            // Lista de Aulas
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                teachers.forEachIndexed { index, professor ->
+                classrooms.forEachIndexed { index, classroom ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = "${professor.getName()} ${professor.getSurname()}", fontSize = 20.sp)
-                        IconButton(onClick = { showEditTeacherDialog = Pair(index, professor) }) {
-                            Icon(Icons.Filled.Edit, contentDescription = "Editar Profesor")
+                        Text(text = "${classroom.getName()}", fontSize = 20.sp)
+                        IconButton(onClick = { showEditClassroomDialog = Pair(index, classroom) }) {
+                            Icon(Icons.Filled.Edit, contentDescription = "Editar Aula")
                         }
                     }
                 }
             }
 
-            // Formulario de agregar profesor
-            if (showAddProfessorForm) {
-                AddTeacherForm(
-                    onDismiss = { showAddProfessorForm = false },
-                    onAddProfessor = { newProfessor ->
-                        teachers.add(newProfessor)
-                        showAddProfessorForm = false
+            // Formulario de agregar Aula
+            if (showAddClassroomForm) {
+                AddClassroomForm(
+                    onDismiss = { showAddClassroomForm = false },
+                    onAddClassroom = { newClassroom ->
+                        classrooms.add(newClassroom)
+                        showAddClassroomForm = false
                     }
                 )
             }
 
             // Mostrar el diálogo de editar profesor
-            showEditTeacherDialog?.let { (index, professor) ->
-                EditTeacherDialog(
-                    initialName = professor.getName(),
-                    initialSurname = professor.getSurname(),
-                    initialDni = professor.getDni(),
-                    initialBirthdate = professor.getBirthdate(),
-                    initialAssignedClass = professor.getAssignedClass(),
-                    onDismiss = { showEditTeacherDialog = null },
-                    onSaveProfessor = { updatedName, updatedSurname, updatedDni, updatedBirthdate, updatedAssignedClass ->
+            showEditClassroomDialog?.let { (index, classroom) ->
+                EditClassroomDialog(
+                    initialId = classroom.getId(),
+                    initialName = classroom.getName(),
+                    initialSection = classroom.getSection(),
+                    initialCapacity = classroom.getCapacity(),
+                    onDismiss = { showEditClassroomDialog = null },
+                    onSaveClassroom = { updatedId, updatedName, updatedSection, updatedCapacity ->
                         // Actualiza los datos del profesor
-                        val updatedProfessor = professor.copy(
-                            updatedName, updatedSurname, updatedDni, updatedBirthdate, updatedAssignedClass
+                        val updatedClassroom = classroom.copy(
+                            updatedId, updatedName, updatedSection, updatedCapacity
                         )
-                        teachers[index] = updatedProfessor
-                        showEditTeacherDialog = null
+                        classrooms[index] = updatedClassroom
+                        showEditClassroomDialog = null
                     },
-                    onDeleteProfessor = {
-                        teachers.removeAt(index)
-                        showEditTeacherDialog = null
+                    onDeleteClassroom = {
+                        classrooms.removeAt(index)
+                        showEditClassroomDialog = null
                     }
                 )
             }
@@ -164,61 +163,56 @@ fun ClassroomScreen(navController: NavHostController) {
 }
 
 @Composable
-fun AddClassroomForm(onDismiss: () -> Unit, onAddProfessor: (Teacher) -> Unit) {
+fun AddClassroomForm(onDismiss: () -> Unit, onAddClassroom: (Classroom) -> Unit) {
+    var id by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
-    var surname by remember { mutableStateOf("") }
-    var dni by remember { mutableStateOf("") }
-    var birthdate by remember { mutableStateOf("") }
-    var assignedClass by remember { mutableStateOf("") }
+    var section by remember { mutableStateOf("") }
+    var capacity by remember { mutableStateOf("") }
+
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Agregar Profesor") },
+        title = { Text(text = "Agregar Aula") },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 TextField(
+                    value = id,
+                    onValueChange = { id = it },
+                    label = { Text("ID") }
+                )
+                TextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Nombre") }
                 )
                 TextField(
-                    value = surname,
-                    onValueChange = { surname = it },
-                    label = { Text("Apellido") }
-                )
-                TextField(
-                    value = dni,
-                    onValueChange = { dni = it },
-                    label = { Text("DNI") },
+                    value = section,
+                    onValueChange = { section = it },
+                    label = { Text("Seccion") },
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
                 )
                 TextField(
-                    value = birthdate,
-                    onValueChange = { birthdate = it },
-                    label = { Text("Fecha de nacimiento (YYYY-MM-DD)") },
+                    value = capacity,
+                    onValueChange = { capacity = it },
+                    label = { Text("Capacidad") },
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
                 )
-                TextField(
-                    value = assignedClass,
-                    onValueChange = { assignedClass = it },
-                    label = { Text("Clase asignada") }
-                )
+
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    val newTeacher = Teacher(
+                    val newClassroom = Classroom(
+                        id,
                         name,
-                        surname,
-                        dni,
-                        birthdate,
-                        assignedClass
+                        section,
+                        capacity
                     )
-                    onAddProfessor(newTeacher)
+                    onAddClassroom(newClassroom)
                 }
             ) {
                 Text("Agregar")
@@ -234,30 +228,36 @@ fun AddClassroomForm(onDismiss: () -> Unit, onAddProfessor: (Teacher) -> Unit) {
 
 @Composable
 fun EditClassroomDialog(
+    initialId: String,
     initialName: String,
-    initialSurname: String,
-    initialDni: String,
-    initialBirthdate: String,
-    initialAssignedClass: String,
+    initialSection: String,
+    initialCapacity: String,
     onDismiss: () -> Unit,
-    onSaveProfessor: (String, String, String, String, String) -> Unit,
-    onDeleteProfessor: () -> Unit
+    onSaveClassroom: (String, String, String, String) -> Unit,
+    onDeleteClassroom: () -> Unit
 ) {
     // Variables de estado para cada campo
+    var updatedId by remember { mutableStateOf(initialId) }
     var updatedName by remember { mutableStateOf(initialName) }
-    var updatedSurname by remember { mutableStateOf(initialSurname) }
-    var updatedDni by remember { mutableStateOf(initialDni) }
-    var updatedBirthdate by remember { mutableStateOf(initialBirthdate) }
-    var updatedAssignedClass by remember { mutableStateOf(initialAssignedClass) }
+    var updatedSection by remember { mutableStateOf(initialSection) }
+    var updatedCapacity by remember { mutableStateOf(initialCapacity) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Editar Profesor") },
+        title = { Text(text = "Editar Aula") },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+
+                // Campo de ID
+                TextField(
+                    value = updatedId,
+                    onValueChange = { updatedId = it },
+                    label = { Text("ID") }
+                )
+
                 // Campo de nombre
                 TextField(
                     value = updatedName,
@@ -265,56 +265,44 @@ fun EditClassroomDialog(
                     label = { Text("Nombre") }
                 )
 
-                // Campo de apellido
-                TextField(
-                    value = updatedSurname,
-                    onValueChange = { updatedSurname = it },
-                    label = { Text("Apellido") }
-                )
 
-                // Campo de DNI
+                // Campo de Seccion
                 TextField(
-                    value = updatedDni,
-                    onValueChange = { updatedDni = it },
-                    label = { Text("DNI") },
+                    value = updatedSection,
+                    onValueChange = { updatedSection = it },
+                    label = { Text("Seccion") },
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
                 )
 
-                // Campo de fecha de nacimiento
+                // Campo de fecha de Capacidad
                 TextField(
-                    value = updatedBirthdate,
-                    onValueChange = { updatedBirthdate = it },
-                    label = { Text("Fecha de nacimiento (YYYY-MM-DD)") },
+                    value = updatedCapacity,
+                    onValueChange = { updatedCapacity = it },
+                    label = { Text("Capacity") },
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
                 )
 
-                // Campo de clase asignada
-                TextField(
-                    value = updatedAssignedClass,
-                    onValueChange = { updatedAssignedClass = it },
-                    label = { Text("Clase Asignada") }
-                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Botón de eliminar profesor
                 OutlinedButton(
-                    onClick = onDeleteProfessor,
+                    onClick = onDeleteClassroom,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
                 ) {
-                    Text("Eliminar Profesor")
+                    Text("Eliminar Aula")
                 }
             }
         },
         confirmButton = {
             Button(onClick = {
-                onSaveProfessor(
+                onSaveClassroom(
+                    updatedId,
                     updatedName,
-                    updatedSurname,
-                    updatedDni,
-                    updatedBirthdate,
-                    updatedAssignedClass
+                    updatedSection,
+                    updatedCapacity
+
                 )
             }) {
                 Text("Guardar Cambios")
