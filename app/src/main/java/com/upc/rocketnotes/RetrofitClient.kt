@@ -30,4 +30,8 @@ object RetrofitClient {
             }
             return retrofit!!
         }
+
+    val placeHolder: PlaceHolder by lazy {
+        retrofitInstance.create(PlaceHolder::class.java)
+    }
 }

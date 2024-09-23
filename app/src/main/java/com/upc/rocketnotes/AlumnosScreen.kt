@@ -24,28 +24,59 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @Composable
-fun AlumnosScreen(navController: NavHostController){
+fun AlumnosScreen(navController: NavHostController) {
     var searchText by remember { mutableStateOf("") }
     var showAddStudentForm by remember { mutableStateOf(false) }
-    var showEditStudentDialog by remember { mutableStateOf<Pair<Int, String>?>(null) } // Almacena el índice y el nombre del alumno a editar
-    val students = remember { mutableListOf("Juan Perez", "Ana Gomez", "Carlos Rodriguez") }
+    var showEditStudentDialog by remember { mutableStateOf<Pair<Int, StudentResource>?>(null) }
+    val students = remember { mutableStateListOf<StudentResource>() }
+    val classrooms = remember { listOf("Aula 101", "Aula 102", "Aula 103") }
+/////////////////////////
+    val context = LocalContext.current
+    val token = getToken(context) // Obtener el token
+//////////////////////////
+    // Obtener la lista de alumnos al cargar la pantalla
+    LaunchedEffect(Unit) {
+        val call = RetrofitClient.placeHolder.getStudents("Bearer $token")
+        call.enqueue(object : Callback<List<StudentResource>> {
+            override fun onResponse(call: Call<List<StudentResource>>, response: Response<List<StudentResource>>) {
+                if (response.isSuccessful) {
+                    response.body()?.let { studentList ->
+                        students.addAll(studentList) // Agregar la lista de alumnos
+                    }
+                } else {
+                    // Manejar error
+                }
+            }
+
+            override fun onFailure(call: Call<List<StudentResource>>, t: Throwable) {
+                // Manejar error de red
+            }
+        })
+    }
 
     Scaffold(
         topBar = { TopNavBar() },
-        bottomBar = { BottomNavBar(navController = navController)},
+        bottomBar = { BottomNavBar(navController = navController) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddStudentForm = true },
@@ -61,9 +92,8 @@ fun AlumnosScreen(navController: NavHostController){
                 .padding(innerPadding)
                 .padding(20.dp)
         ) {
-            Text(text = "Lista de Alumnos",fontSize = 28.sp)
+            Text(text = "Lista de Alumnos", fontSize = 28.sp)
             Spacer(modifier = Modifier.height(10.dp))
-            // Barra de búsqueda y botón de agregar alumno
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -77,7 +107,6 @@ fun AlumnosScreen(navController: NavHostController){
                 )
             }
             Spacer(modifier = Modifier.height(10.dp))
-            // Lista de alumnos
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -88,29 +117,45 @@ fun AlumnosScreen(navController: NavHostController){
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = student, fontSize = 20.sp)
-                        IconButton(onClick = { showEditStudentDialog = Pair(index, student)}) {
+                        // Cambiar esta línea para mostrar el nombre completo
+                        Text(text = "${student.firstName} ${student.paternalLastName} ${student.maternalLastName}", fontSize = 20.sp)
+                        IconButton(onClick = { showEditStudentDialog = Pair(index, student) }) {
                             Icon(Icons.Filled.Edit, contentDescription = "Editar Alumno")
                         }
                     }
                 }
             }
 
-            // Formulario de agregar alumno
             if (showAddStudentForm) {
                 AddStudentForm(
                     onDismiss = { showAddStudentForm = false },
                     onAddStudent = { newStudent ->
-                        students.add(newStudent)
+                        val call = RetrofitClient.placeHolder.addStudent(newStudent, "Bearer $token")
+                        call.enqueue(object : Callback<StudentResource> {
+                            override fun onResponse(call: Call<StudentResource>, response: Response<StudentResource>) {
+                                if (response.isSuccessful) {
+                                    response.body()?.let { addedStudent ->
+                                        students.add(addedStudent)
+
+                                    }
+                                }
+                            }
+
+                            override fun onFailure(call: Call<StudentResource>, t: Throwable) {
+                                // Manejar error
+                            }
+                        })
                         showAddStudentForm = false
-                    }
+                    },
+                    classrooms = classrooms
                 )
             }
 
-            // Mostrar el diálogo de editar alumno
             showEditStudentDialog?.let { (index, student) ->
                 EditStudentDialog(
-                    initialName = student,
+                    initialName = student.firstName,
+                    initialPaternalLastName = student.paternalLastName, // Añade el apellido paterno
+                    initialMaternalLastName = student.maternalLastName, // Añade el apellido materno
                     onDismiss = { showEditStudentDialog = null },
                     onSaveStudent = { updatedStudent ->
                         students[index] = updatedStudent
@@ -119,21 +164,21 @@ fun AlumnosScreen(navController: NavHostController){
                     onDeleteStudent = {
                         students.removeAt(index)
                         showEditStudentDialog = null
-                    }
+                    },
+                    classrooms = classrooms
                 )
             }
         }
     }
 }
 
-
 @Composable
-fun AddStudentForm(onDismiss: () -> Unit, onAddStudent: (String) -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var surname by remember { mutableStateOf("") }
+fun AddStudentForm(onDismiss: () -> Unit, onAddStudent: (StudentResource) -> Unit, classrooms: List<String>) {
+    var firstName by remember { mutableStateOf("") }
+    var paternalLastName by remember { mutableStateOf("") }
+    var maternalLastName by remember { mutableStateOf("") }
     var dni by remember { mutableStateOf("") }
-    var birthdate by remember { mutableStateOf("") }
-    var assignedTeacher by remember { mutableStateOf("") }
+    var selectedClassroom by remember { mutableStateOf(0) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -144,43 +189,47 @@ fun AddStudentForm(onDismiss: () -> Unit, onAddStudent: (String) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 TextField(
-                    value = name,
-                    onValueChange = { name = it },
+                    value = firstName,
+                    onValueChange = { firstName = it },
                     label = { Text("Nombre") }
                 )
-
                 TextField(
-                    value = surname,
-                    onValueChange = { surname = it },
-                    label = { Text("Apellido") }
+                    value = paternalLastName,
+                    onValueChange = { paternalLastName = it },
+                    label = { Text("Apellido Paterno") }
                 )
-
+                TextField(
+                    value = maternalLastName,
+                    onValueChange = { maternalLastName = it },
+                    label = { Text("Apellido Materno") }
+                )
                 TextField(
                     value = dni,
                     onValueChange = { dni = it },
                     label = { Text("DNI") },
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
                 )
-
+                Text(text = "Seleccionar Aula")
                 TextField(
-                    value = birthdate,
-                    onValueChange = { birthdate = it },
-                    label = { Text("Fecha de nacimiento (YYYY-MM-DD)") },
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
-                )
-
-                TextField(
-                    value = assignedTeacher,
-                    onValueChange = { assignedTeacher = it },
-                    label = { Text("Profesor asignado") }
+                    value = classrooms[selectedClassroom],
+                    onValueChange = {},
+                    label = { Text("Aula") },
+                    readOnly = true
                 )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    val newStudent = "$name $surname"
-                    onAddStudent(newStudent)
+                    val studentResource = StudentResource(
+                        null,
+                        firstName,
+                        paternalLastName,
+                        maternalLastName,
+                        dni,
+                        listOf(selectedClassroom.toInt()) // Convertir a lista de enteros
+                    )
+                    onAddStudent(studentResource)
                 }
             ) {
                 Text("Agregar")
@@ -197,11 +246,17 @@ fun AddStudentForm(onDismiss: () -> Unit, onAddStudent: (String) -> Unit) {
 @Composable
 fun EditStudentDialog(
     initialName: String,
+    initialPaternalLastName: String,
+    initialMaternalLastName: String,
     onDismiss: () -> Unit,
-    onSaveStudent: (String) -> Unit,
-    onDeleteStudent: () -> Unit
+    onSaveStudent: (StudentResource) -> Unit,
+    onDeleteStudent: () -> Unit,
+    classrooms: List<String>
 ) {
     var updatedName by remember { mutableStateOf(initialName) }
+    var updatedPaternalLastName by remember { mutableStateOf(initialPaternalLastName) }
+    var updatedMaternalLastName by remember { mutableStateOf(initialMaternalLastName) }
+    var selectedClassroom by remember { mutableStateOf(classrooms[0]) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -214,21 +269,39 @@ fun EditStudentDialog(
                 TextField(
                     value = updatedName,
                     onValueChange = { updatedName = it },
-                    label = { Text("Nombre Completo") }
+                    label = { Text("Nombre") }
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-                // Botón de eliminar alumno
-                OutlinedButton(
-                    onClick = onDeleteStudent,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
-                ) {
-                    Text("Eliminar Alumno")
-                }
+                TextField(
+                    value = updatedPaternalLastName,
+                    onValueChange = { updatedPaternalLastName = it },
+                    label = { Text("Apellido Paterno") }
+                )
+                TextField(
+                    value = updatedMaternalLastName,
+                    onValueChange = { updatedMaternalLastName = it },
+                    label = { Text("Apellido Materno") }
+                )
+                Text(text = "Seleccionar Aula")
+                TextField(
+                    value = selectedClassroom,
+                    onValueChange = { selectedClassroom = it },
+                    label = { Text("Aula") },
+                    readOnly = true
+                )
             }
         },
         confirmButton = {
-            Button(onClick = { onSaveStudent(updatedName) }) {
+            Button(onClick = {
+                val updatedStudent = StudentResource(
+                    null, // Asigna el ID correcto si lo tienes
+                    updatedName,
+                    "", // Pasa los apellidos adecuados si los tienes
+                    "", // Pasa los apellidos adecuados si los tienes
+                    "", // Pasa el DNI adecuado si lo tienes
+                    listOf(classrooms.indexOf(selectedClassroom)) // Convertir a lista de enteros
+                )
+                onSaveStudent(updatedStudent)
+            }) {
                 Text("Guardar Cambios")
             }
         },

@@ -1,5 +1,6 @@
 package com.upc.rocketnotes
 
+import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -47,6 +48,7 @@ fun LoginScreen(navController: NavHostController) {
 
     val retrofit = RetrofitClient.retrofitInstance
     val apiService = retrofit.create(PlaceHolder::class.java)
+
 
     // Estructura de la interfaz
     Column(
@@ -140,6 +142,11 @@ fun LoginScreen(navController: NavHostController) {
                         if (response.isSuccessful) {
                             val signInResponse = response.body()
                             if (signInResponse != null) {
+                                // Guardar el token en SharedPreferences
+                                val sharedPreferences = context.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+                                val editor = sharedPreferences.edit()
+                                editor.putString("authToken", signInResponse.token) // Guardar el token
+                                editor.apply()
                                 // Navegar a la pantalla de éxito
                                 navController.navigate("home")
                             }
@@ -182,4 +189,9 @@ fun LoginScreen(navController: NavHostController) {
             )
         }
     }
+}
+
+fun getToken(context: Context): String? {
+    val sharedPreferences = context.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    return sharedPreferences.getString("authToken", null)
 }
