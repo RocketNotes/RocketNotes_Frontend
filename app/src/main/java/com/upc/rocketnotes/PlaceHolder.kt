@@ -25,4 +25,14 @@ interface PlaceHolder {
         @Body student: StudentResource,
         @Header("Authorization") authHeader: String // Asegúrate de que esto esté incluido
     ): Call<StudentResource>
+
+    @GET("teachers")
+    fun getTeachers(@Header("Authorization") authHeader: String): Call<List<TeacherResource>>
+
+    @POST("teachers")
+    fun addTeacher(
+        @Body teacher: TeacherResource,
+        @Header("Authorization") authHeader: String
+    ): Call<TeacherResource>
+
 }

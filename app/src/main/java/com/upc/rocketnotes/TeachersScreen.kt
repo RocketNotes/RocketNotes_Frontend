@@ -23,47 +23,70 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+
 @Composable
 fun TeachersScreen(navController: NavHostController) {
     var searchText by remember { mutableStateOf("") }
-    var showAddProfessorForm by remember { mutableStateOf(false) }
-    var showEditTeacherDialog by remember { mutableStateOf<Pair<Int, Teacher>?>(null) } // Almacena el índice y el profesor a editar
-    val teachers = remember {
-        mutableListOf(
-            Teacher(
-                "Pedro",
-                "Sanchez",
-                "12345678",
-                "1990-01-01",
-                "Matemáticas"
-            ),
-            Teacher(
-                "Ana",
-                "Gonzalez",
-                "87654321",
-                "1985-05-15",
-                "Ciencias"
-            ),
-            Teacher(
-                "Carlos",
-                "Hernandez",
-                "11223344",
-                "1980-03-20",
-                "Historia"
-            )
-        )
+    var showAddTeacherForm by remember { mutableStateOf(false) }
+    var showEditTeacherDialog by remember { mutableStateOf<Pair<Int, TeacherResource>?>(null) }
+    val teachers = remember { mutableStateListOf<TeacherResource>() }
+    var filteredTeachers by remember { mutableStateOf(teachers.toList()) } // Nueva lista para profesores filtrados
+
+    // Obtener el token desde SharedPreferences
+    val context = LocalContext.current
+    val token = getToken(context)
+
+    // Llamar a la API para obtener la lista de profesores al iniciar
+    LaunchedEffect(Unit) {
+        val call = RetrofitClient.placeHolder.getTeachers("Bearer $token")
+        call.enqueue(object : Callback<List<TeacherResource>> {
+            override fun onResponse(call: Call<List<TeacherResource>>, response: Response<List<TeacherResource>>) {
+                if (response.isSuccessful) {
+                    response.body()?.let { teacherList ->
+                        teachers.clear()
+                        teachers.addAll(teacherList)
+                        filteredTeachers = teachers.toList() // Actualiza la lista filtrada con todos los profesores inicialmente
+                    }
+                } else {
+                    // Manejar el error de respuesta
+                }
+            }
+
+            override fun onFailure(call: Call<List<TeacherResource>>, t: Throwable) {
+                // Manejar el error de red
+            }
+        })
+    }
+
+    // Filtrar la lista cada vez que el texto de búsqueda cambie
+    LaunchedEffect(searchText) {
+        filteredTeachers = if (searchText.isEmpty()) {
+            teachers.toList() // Mostrar todos los profesores si el campo de búsqueda está vacío
+        } else {
+            teachers.filter { teacher ->
+                teacher.firstName.contains(searchText, ignoreCase = true) ||
+                        teacher.paternalLastName.contains(searchText, ignoreCase = true) ||
+                        teacher.maternalLastName.contains(searchText, ignoreCase = true)
+            }
+        }
     }
 
     Scaffold(
@@ -71,7 +94,7 @@ fun TeachersScreen(navController: NavHostController) {
         bottomBar = { BottomNavBar(navController = navController) },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddProfessorForm = true },
+                onClick = { showAddTeacherForm = true },
                 containerColor = Color.Green
             ) {
                 Icon(
@@ -106,55 +129,63 @@ fun TeachersScreen(navController: NavHostController) {
             }
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Lista de profesores
+            // Lista de profesores filtrados
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                teachers.forEachIndexed { index, professor ->
+                filteredTeachers.forEachIndexed { index, teacher ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = "${professor.getName()} ${professor.getSurname()}", fontSize = 20.sp)
-                        IconButton(onClick = { showEditTeacherDialog = Pair(index, professor) }) {
+                        Text(text = "${teacher.firstName} ${teacher.paternalLastName} ${teacher.maternalLastName}", fontSize = 20.sp)
+                        IconButton(onClick = { showEditTeacherDialog = Pair(index, teacher) }) {
                             Icon(Icons.Filled.Edit, contentDescription = "Editar Profesor")
                         }
                     }
                 }
             }
 
-            // Formulario de agregar profesor
-            if (showAddProfessorForm) {
+            // Mostrar formulario para agregar profesor
+            if (showAddTeacherForm) {
                 AddTeacherForm(
-                    onDismiss = { showAddProfessorForm = false },
-                    onAddProfessor = { newProfessor ->
-                        teachers.add(newProfessor)
-                        showAddProfessorForm = false
+                    onDismiss = { showAddTeacherForm = false },
+                    onAddTeacher = { newTeacher ->
+                        val call = RetrofitClient.placeHolder.addTeacher(newTeacher, "Bearer $token")
+                        call.enqueue(object : Callback<TeacherResource> {
+                            override fun onResponse(call: Call<TeacherResource>, response: Response<TeacherResource>) {
+                                if (response.isSuccessful) {
+                                    response.body()?.let { addedTeacher ->
+                                        teachers.add(addedTeacher)
+                                        filteredTeachers = teachers.toList() // Actualiza la lista filtrada
+                                    }
+                                }
+                            }
+
+                            override fun onFailure(call: Call<TeacherResource>, t: Throwable) {
+                                // Manejar error
+                            }
+                        })
+                        showAddTeacherForm = false
                     }
                 )
             }
 
-            // Mostrar el diálogo de editar profesor
-            showEditTeacherDialog?.let { (index, professor) ->
+            // Mostrar diálogo para editar profesor
+            showEditTeacherDialog?.let { (index, teacher) ->
                 EditTeacherDialog(
-                    initialName = professor.getName(),
-                    initialSurname = professor.getSurname(),
-                    initialDni = professor.getDni(),
-                    initialBirthdate = professor.getBirthdate(),
-                    initialAssignedClass = professor.getAssignedClass(),
+                    initialTeacher = teacher,
                     onDismiss = { showEditTeacherDialog = null },
-                    onSaveProfessor = { updatedName, updatedSurname, updatedDni, updatedBirthdate, updatedAssignedClass ->
-                        // Actualiza los datos del profesor
-                        val updatedProfessor = professor.copy(
-                            updatedName, updatedSurname, updatedDni, updatedBirthdate, updatedAssignedClass
-                        )
-                        teachers[index] = updatedProfessor
+                    onSaveTeacher = { updatedTeacher ->
+                        teachers[index] = updatedTeacher
+                        filteredTeachers = teachers.toList() // Actualiza la lista filtrada
                         showEditTeacherDialog = null
                     },
-                    onDeleteProfessor = {
+                    onDeleteTeacher = {
                         teachers.removeAt(index)
+                        filteredTeachers = teachers.toList() // Actualiza la lista filtrada
                         showEditTeacherDialog = null
                     }
                 )
@@ -164,12 +195,13 @@ fun TeachersScreen(navController: NavHostController) {
 }
 
 @Composable
-fun AddTeacherForm(onDismiss: () -> Unit, onAddProfessor: (Teacher) -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var surname by remember { mutableStateOf("") }
+fun AddTeacherForm(onDismiss: () -> Unit, onAddTeacher: (TeacherResource) -> Unit) {
+    var firstName by remember { mutableStateOf("") }
+    var paternalLastName by remember { mutableStateOf("") }
+    var maternalLastName by remember { mutableStateOf("") }
     var dni by remember { mutableStateOf("") }
-    var birthdate by remember { mutableStateOf("") }
-    var assignedClass by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -180,14 +212,19 @@ fun AddTeacherForm(onDismiss: () -> Unit, onAddProfessor: (Teacher) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 TextField(
-                    value = name,
-                    onValueChange = { name = it },
+                    value = firstName,
+                    onValueChange = { firstName = it },
                     label = { Text("Nombre") }
                 )
                 TextField(
-                    value = surname,
-                    onValueChange = { surname = it },
-                    label = { Text("Apellido") }
+                    value = paternalLastName,
+                    onValueChange = { paternalLastName = it },
+                    label = { Text("Apellido Paterno") }
+                )
+                TextField(
+                    value = maternalLastName,
+                    onValueChange = { maternalLastName = it },
+                    label = { Text("Apellido Materno") }
                 )
                 TextField(
                     value = dni,
@@ -196,31 +233,26 @@ fun AddTeacherForm(onDismiss: () -> Unit, onAddProfessor: (Teacher) -> Unit) {
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
                 )
                 TextField(
-                    value = birthdate,
-                    onValueChange = { birthdate = it },
-                    label = { Text("Fecha de nacimiento (YYYY-MM-DD)") },
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Teléfono") },
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone)
                 )
                 TextField(
-                    value = assignedClass,
-                    onValueChange = { assignedClass = it },
-                    label = { Text("Clase asignada") }
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email)
                 )
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    val newTeacher = Teacher(
-                        name,
-                        surname,
-                        dni,
-                        birthdate,
-                        assignedClass
-                    )
-                    onAddProfessor(newTeacher)
-                }
-            ) {
+            Button(onClick = {
+                val newTeacher = TeacherResource(
+                    null, firstName, paternalLastName, maternalLastName, dni, phone, email
+                )
+                onAddTeacher(newTeacher)
+            }) {
                 Text("Agregar")
             }
         },
@@ -234,21 +266,17 @@ fun AddTeacherForm(onDismiss: () -> Unit, onAddProfessor: (Teacher) -> Unit) {
 
 @Composable
 fun EditTeacherDialog(
-    initialName: String,
-    initialSurname: String,
-    initialDni: String,
-    initialBirthdate: String,
-    initialAssignedClass: String,
+    initialTeacher: TeacherResource,
     onDismiss: () -> Unit,
-    onSaveProfessor: (String, String, String, String, String) -> Unit,
-    onDeleteProfessor: () -> Unit
+    onSaveTeacher: (TeacherResource) -> Unit,
+    onDeleteTeacher: () -> Unit
 ) {
-    // Variables de estado para cada campo
-    var updatedName by remember { mutableStateOf(initialName) }
-    var updatedSurname by remember { mutableStateOf(initialSurname) }
-    var updatedDni by remember { mutableStateOf(initialDni) }
-    var updatedBirthdate by remember { mutableStateOf(initialBirthdate) }
-    var updatedAssignedClass by remember { mutableStateOf(initialAssignedClass) }
+    var firstName by remember { mutableStateOf(initialTeacher.firstName) }
+    var paternalLastName by remember { mutableStateOf(initialTeacher.paternalLastName) }
+    var maternalLastName by remember { mutableStateOf(initialTeacher.maternalLastName) }
+    var dni by remember { mutableStateOf(initialTeacher.dni) }
+    var phone by remember { mutableStateOf(initialTeacher.phone) }
+    var email by remember { mutableStateOf(initialTeacher.email) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -258,64 +286,53 @@ fun EditTeacherDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Campo de nombre
                 TextField(
-                    value = updatedName,
-                    onValueChange = { updatedName = it },
+                    value = firstName,
+                    onValueChange = { firstName = it },
                     label = { Text("Nombre") }
                 )
-
-                // Campo de apellido
                 TextField(
-                    value = updatedSurname,
-                    onValueChange = { updatedSurname = it },
-                    label = { Text("Apellido") }
+                    value = paternalLastName,
+                    onValueChange = { paternalLastName = it },
+                    label = { Text("Apellido Paterno") }
                 )
-
-                // Campo de DNI
                 TextField(
-                    value = updatedDni,
-                    onValueChange = { updatedDni = it },
+                    value = maternalLastName,
+                    onValueChange = { maternalLastName = it },
+                    label = { Text("Apellido Materno") }
+                )
+                TextField(
+                    value = dni,
+                    onValueChange = { dni = it },
                     label = { Text("DNI") },
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
                 )
-
-                // Campo de fecha de nacimiento
                 TextField(
-                    value = updatedBirthdate,
-                    onValueChange = { updatedBirthdate = it },
-                    label = { Text("Fecha de nacimiento (YYYY-MM-DD)") },
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Teléfono") },
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone)
                 )
-
-                // Campo de clase asignada
                 TextField(
-                    value = updatedAssignedClass,
-                    onValueChange = { updatedAssignedClass = it },
-                    label = { Text("Clase Asignada") }
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email)
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Botón de eliminar profesor
-                OutlinedButton(
-                    onClick = onDeleteProfessor,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
-                ) {
-                    Text("Eliminar Profesor")
-                }
             }
         },
         confirmButton = {
             Button(onClick = {
-                onSaveProfessor(
-                    updatedName,
-                    updatedSurname,
-                    updatedDni,
-                    updatedBirthdate,
-                    updatedAssignedClass
+                val updatedTeacher = TeacherResource(
+                    initialTeacher.id,
+                    firstName,
+                    paternalLastName,
+                    maternalLastName,
+                    dni,
+                    phone,
+                    email
                 )
+                onSaveTeacher(updatedTeacher)
             }) {
                 Text("Guardar Cambios")
             }
