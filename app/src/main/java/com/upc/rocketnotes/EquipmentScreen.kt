@@ -59,7 +59,8 @@ fun EquipmentScreen(navController: NavHostController) {
             ) {
                 Icon(Icons.Filled.AddCircle, contentDescription = "Add Equipment", tint = Color.White)
             }
-        }
+        },
+        bottomBar = { BottomNavBar(navController = navController) }
     ) { innerPadding ->
         Column(
             modifier = Modifier

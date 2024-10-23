@@ -59,7 +59,8 @@ fun FacilitiesScreen(navController: NavHostController) {
             ) {
                 Icon(Icons.Filled.AddCircle, contentDescription = "Agregar Facility", tint = Color.White)
             }
-        }
+        },
+        bottomBar = { BottomNavBar(navController = navController) }
     ) { innerPadding ->
         Column(
             modifier = Modifier

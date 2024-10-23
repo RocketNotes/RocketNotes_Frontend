@@ -7,7 +7,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 
 object RetrofitClient {
     private const val BASE_URL =
-        "https://c278-181-66-206-10.ngrok-free.app/api/v1/" // Usar la IP de localhost para el emulador de Android
+        "http://10.0.2.2:8081/api/v1/" // Usar la IP de localhost para el emulador de Android
 
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY // Muestra el cuerpo de las solicitudes y respuestas
