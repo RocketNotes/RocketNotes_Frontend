@@ -50,10 +50,9 @@ fun AlumnosScreen(navController: NavHostController) {
     var showEditStudentDialog by remember { mutableStateOf<Pair<Int, StudentResource>?>(null) }
     val students = remember { mutableStateListOf<StudentResource>() }
     val classrooms = remember { listOf("Aula 101", "Aula 102", "Aula 103") }
-/////////////////////////
     val context = LocalContext.current
     val token = getToken(context) // Obtener el token
-//////////////////////////
+
     // Obtener la lista de alumnos al cargar la pantalla
     LaunchedEffect(Unit) {
         val call = RetrofitClient.placeHolder.getStudents("Bearer $token")
@@ -73,6 +72,8 @@ fun AlumnosScreen(navController: NavHostController) {
             }
         })
     }
+
+
 
     Scaffold(
         topBar = { TopNavBar() },
@@ -136,7 +137,6 @@ fun AlumnosScreen(navController: NavHostController) {
                                 if (response.isSuccessful) {
                                     response.body()?.let { addedStudent ->
                                         students.add(addedStudent)
-
                                     }
                                 }
                             }
@@ -230,6 +230,7 @@ fun AddStudentForm(onDismiss: () -> Unit, onAddStudent: (StudentResource) -> Uni
                         listOf(selectedClassroom.toInt()) // Convertir a lista de enteros
                     )
                     onAddStudent(studentResource)
+                    onDismiss()
                 }
             ) {
                 Text("Agregar")
@@ -242,6 +243,7 @@ fun AddStudentForm(onDismiss: () -> Unit, onAddStudent: (StudentResource) -> Uni
         }
     )
 }
+
 
 @Composable
 fun EditStudentDialog(
