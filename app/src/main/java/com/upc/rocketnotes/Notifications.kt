@@ -32,7 +32,7 @@ fun NotificationsScreen(navController: NavHostController) {
                 .padding(16.dp)
         ) {
             // Notificación 1
-            NotificationCard("El curso AH12 cambió su sílabo")
+            NotificationCard("El curso AH12 ha cambiado su sílabo")
             Spacer(modifier = Modifier.height(8.dp))
 
             // Notificación 2
