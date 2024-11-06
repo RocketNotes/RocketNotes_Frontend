@@ -61,7 +61,7 @@ interface PlaceHolder {
         @Body teacher: TeacherResource,
         @Header("Authorization") authHeader: String
     ): Call<TeacherResource>
-
+  
     @DELETE("teachers/{id}")
     fun deleteTeacher(@Path("id") teacherId: Long, @Header("Authorization") authToken: String): Call<Void>
 
@@ -71,5 +71,33 @@ interface PlaceHolder {
         @Body teacher: TeacherResource,
         @Header("Authorization") authToken: String
     ): Call<TeacherResource>
+  
+    //FACILITIES
+    @GET("facilities")
+    fun getFacilities(@Header("Authorization") authHeader: String): Call<List<FacilityResource>>
 
+    @POST("facilities")
+    fun addFacility(
+        @Body facility: FacilityResource,
+        @Header("Authorization") authHeader: String
+    ): Call<FacilityResource>
+
+    @PUT("facilities/{id}")
+    fun updateFacility(
+        @Path("id") id: String,
+        @Body facility: FacilityResource,
+        @Header("Authorization") authHeader: String
+    ): Call<FacilityResource>
+
+    @DELETE("facilities/{id}")
+    fun deleteFacility(
+        @Path("id") id: String,
+        @Header("Authorization") authHeader: String
+    ): Call<Void>
+
+    @GET("facilities/{id}")
+    fun getFacilityById(
+        @Path("id") id: String,
+        @Header("Authorization") authHeader: String
+    ): Call<FacilityResource>
 }

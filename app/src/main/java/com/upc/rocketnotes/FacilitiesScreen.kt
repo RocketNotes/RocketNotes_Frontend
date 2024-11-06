@@ -1,5 +1,6 @@
 package com.upc.rocketnotes
 
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
@@ -46,21 +53,56 @@ import retrofit2.Response
 
 @Composable
 fun FacilitiesScreen(navController: NavHostController) {
+    var searchText by remember { mutableStateOf("") }
     var showAddFacilityForm by remember { mutableStateOf(false) }
-    var facilities = remember { mutableStateListOf<FacilityResource>() }
     var showEditFacilityDialog by remember { mutableStateOf<Pair<Int, FacilityResource>?>(null) }
+    val facilities = remember { mutableStateListOf<FacilityResource>() }
+    var filteredFacilities by remember { mutableStateOf(facilities.toList()) }
+
+    // Obtener el token desde SharedPreferences
+    val context = LocalContext.current
+    val token = getToken(context)
+
+    // Llamar a la API para obtener la lista de instalaciones
+    LaunchedEffect(Unit) {
+        val call = RetrofitClient.placeHolder.getFacilities("Bearer $token")
+        call.enqueue(object : Callback<List<FacilityResource>> {
+            override fun onResponse(call: Call<List<FacilityResource>>, response: Response<List<FacilityResource>>) {
+                if (response.isSuccessful) {
+                    response.body()?.let { facilityList ->
+                        facilities.clear()
+                        facilities.addAll(facilityList)
+                        filteredFacilities = facilities.toList()
+                    }
+                }
+            }
+
+            override fun onFailure(call: Call<List<FacilityResource>>, t: Throwable) {
+                // Manejar el error de red
+            }
+        })
+    }
+
+    // Filtrar instalaciones según el texto de búsqueda
+    LaunchedEffect(searchText) {
+        filteredFacilities = if (searchText.isEmpty()) {
+            facilities.toList()
+        } else {
+            facilities.filter { it.name.contains(searchText, ignoreCase = true) }
+        }
+    }
 
     Scaffold(
         topBar = { TopNavBar() },
+        bottomBar = { BottomNavBar(navController = navController) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddFacilityForm = true },
                 containerColor = Color.Green
             ) {
-                Icon(Icons.Filled.AddCircle, contentDescription = "Agregar Facility", tint = Color.White)
+                Icon(Icons.Filled.AddCircle, contentDescription = "Agregar Instalación", tint = Color.White)
             }
-        },
-        bottomBar = { BottomNavBar(navController = navController) }
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -68,76 +110,75 @@ fun FacilitiesScreen(navController: NavHostController) {
                 .padding(innerPadding)
                 .padding(20.dp)
         ) {
-            Text(text = "Lista de Facilities", fontSize = 28.sp)
+            Text(text = "Lista de Instalaciones", fontSize = 28.sp)
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Encabezado de la tabla
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = "Name", fontSize = 16.sp, modifier = Modifier.weight(1f))
-                Text(text = "Period", fontSize = 16.sp, modifier = Modifier.weight(1f))
-                Text(text = "Budget", fontSize = 16.sp, modifier = Modifier.weight(1f))
-                Text(text = "Status", fontSize = 16.sp, modifier = Modifier.weight(1f))
-                Spacer(modifier = Modifier.width(40.dp)) // Espacio para el ícono de editar
+                TextField(
+                    value = searchText,
+                    onValueChange = { searchText = it },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Buscar Instalación") }
+                )
             }
-
-            Divider(color = Color.Gray, thickness = 1.dp)
-
-            // Datos de los facilities
+            Spacer(modifier = Modifier.height(10.dp))
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                facilities.forEachIndexed { index, facility ->
+                filteredFacilities.forEachIndexed { index, facility ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // Datos de la tabla
-                        Text(text = facility.name, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                        Text(text = facility.period, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                        Text(text = "$${facility.budget}", fontSize = 14.sp, modifier = Modifier.weight(1f))
-                        Text(text = facility.status, fontSize = 14.sp, modifier = Modifier.weight(1f))
-
-                        // Icono para editar el estado
+                        Text(text = facility.name, fontSize = 20.sp)
                         IconButton(onClick = { showEditFacilityDialog = Pair(index, facility) }) {
-                            Icon(Icons.Filled.Edit, contentDescription = "Editar Estado")
+                            Icon(Icons.Filled.Edit, contentDescription = "Editar Instalación")
                         }
                     }
                 }
             }
-        }
 
-        // Formulario para añadir un nuevo facility
-        if (showAddFacilityForm) {
-            AddFacilityForm(
-                onDismiss = { showAddFacilityForm = false },
-                onAddFacility = { newFacility ->
-                    facilities.add(newFacility)
-                    showAddFacilityForm = false
-                }
-            )
-        }
+            if (showAddFacilityForm) {
+                AddFacilityForm(
+                    onDismiss = { showAddFacilityForm = false },
+                    onAddFacility = { newFacility ->
+                        val call = RetrofitClient.placeHolder.addFacility(newFacility, "Bearer $token")
+                        call.enqueue(object : Callback<FacilityResource> {
+                            override fun onResponse(call: Call<FacilityResource>, response: Response<FacilityResource>) {
+                                if (response.isSuccessful) {
+                                    response.body()?.let { addedFacility ->
+                                        facilities.add(addedFacility)
+                                        filteredFacilities = facilities.toList()
+                                    }
+                                }
+                            }
 
-        // Diálogo para editar el estado del facility
-        showEditFacilityDialog?.let { (index, facility) ->
-            EditFacilityDialog(
-                initialName = facility.name,
-                initialStatus = facility.status,
-                initialBudget = facility.budget,
-                initialPeriod = facility.period,
-                onDismiss = { showEditFacilityDialog = null },
-                onSaveFacility = { updatedFacility ->
-                    facilities[index] = updatedFacility
-                    showEditFacilityDialog = null
-                }
-            )
+                            override fun onFailure(call: Call<FacilityResource>, t: Throwable) {
+                                // Manejar el error de red
+                            }
+                        })
+                        showAddFacilityForm = false
+                    }
+                )
+            }
+
+            showEditFacilityDialog?.let { (index, facility) ->
+                EditFacilityDialog(
+                    initialFacility = facility,
+                    onDismiss = { showEditFacilityDialog = null },
+                    onSaveFacility = { updatedFacility ->
+                        facilities[index] = updatedFacility
+                        filteredFacilities = facilities.toList()
+                        showEditFacilityDialog = null
+                    }
+                )
+            }
         }
     }
 }
@@ -145,136 +186,66 @@ fun FacilitiesScreen(navController: NavHostController) {
 @Composable
 fun AddFacilityForm(onDismiss: () -> Unit, onAddFacility: (FacilityResource) -> Unit) {
     var name by remember { mutableStateOf("") }
-    var status by remember { mutableStateOf("") }
-    var budget by remember { mutableStateOf("") }
     var period by remember { mutableStateOf("") }
+    var creation by remember { mutableStateOf("") }
+    var budget by remember { mutableStateOf("") }
+    var status by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Agregar Facility") },
+        title = { Text(text = "Agregar Instalación") },
         text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                TextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Nombre del Facility") }
-                )
-                TextField(
-                    value = period,
-                    onValueChange = { period = it },
-                    label = { Text("Período") }
-                )
-                TextField(
-                    value = budget,
-                    onValueChange = { budget = it },
-                    label = { Text("Presupuesto") },
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
-                )
-                TextField(
-                    value = status,
-                    onValueChange = { status = it },
-                    label = { Text("Estado del Facility") }
-                )
-
-
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                TextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") })
+                TextField(value = period, onValueChange = { period = it }, label = { Text("Periodo") })
+                TextField(value = budget, onValueChange = { budget = it }, label = { Text("Presupuesto") }, keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number))
+                TextField(value = creation, onValueChange = { creation = it }, label = { Text("Creación") })
+                TextField(value = status, onValueChange = { status = it }, label = { Text("Estado") }, keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number))
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    val newFacility = FacilityResource(
-                        name = name,
-                        status = status,
-                        budget = budget.toDoubleOrNull() ?: 0.0,
-                        period = period
-                    )
-                    onAddFacility(newFacility)
-                }
-            ) {
-                Text("Agregar")
-            }
+            Button(onClick = {
+                val newFacility = FacilityResource(null, name, period, creation, budget.toIntOrNull() ?: 0, status.toIntOrNull() ?: 0)
+                onAddFacility(newFacility)
+            }) { Text("Agregar") }
         },
-        dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
+        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancelar") } }
     )
 }
 
 @Composable
 fun EditFacilityDialog(
-    initialName: String,
-    initialStatus: String,
-    initialBudget: Double,
-    initialPeriod: String,
+    initialFacility: FacilityResource,
     onDismiss: () -> Unit,
     onSaveFacility: (FacilityResource) -> Unit
 ) {
-    var updatedName by remember { mutableStateOf(initialName) }
-    var updatedStatus by remember { mutableStateOf(initialStatus) }
-    var updatedBudget by remember { mutableStateOf(initialBudget.toString()) }
-    var updatedPeriod by remember { mutableStateOf(initialPeriod) }
+    var name by remember { mutableStateOf(initialFacility.name) }
+    var period by remember { mutableStateOf(initialFacility.period) }
+    var creation by remember { mutableStateOf(initialFacility.creation) }
+    var budget by remember { mutableStateOf(initialFacility.budget.toString()) }
+    var status by remember { mutableStateOf(initialFacility.status.toString()) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Editar Facility") },
+        title = { Text(text = "Editar Instalación") },
         text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                TextField(
-                    value = updatedName,
-                    onValueChange = { updatedName = it },
-                    label = { Text("Nombre del Facility") }
-                )
-                TextField(
-                    value = updatedPeriod,
-                    onValueChange = { updatedPeriod = it },
-                    label = { Text("Período") }
-                )
-                TextField(
-                    value = updatedBudget,
-                    onValueChange = { updatedBudget = it },
-                    label = { Text("Presupuesto") },
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
-                )
-                TextField(
-                    value = updatedStatus,
-                    onValueChange = { updatedStatus = it },
-                    label = { Text("Estado del Facility") }
-                )
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                TextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") })
+                TextField(value = period, onValueChange = { period = it }, label = { Text("Periodo") })
+                TextField(value = budget, onValueChange = { budget = it }, label = { Text("Presupuesto") }, keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number))
+                TextField(value = creation, onValueChange = { creation = it }, label = { Text("Creación") })
+                TextField(value = status, onValueChange = { status = it }, label = { Text("Estado") }, keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number))
             }
         },
         confirmButton = {
             Button(onClick = {
                 val updatedFacility = FacilityResource(
-                    name = updatedName,
-                    status = updatedStatus,
-                    budget = updatedBudget.toDoubleOrNull() ?: 0.0,
-                    period = updatedPeriod
+                    initialFacility.id, name, period, creation, budget.toIntOrNull() ?: 0, status.toIntOrNull() ?: 0
                 )
                 onSaveFacility(updatedFacility)
-            }) {
-                Text("Guardar Cambios")
-            }
+            }) { Text("Guardar Cambios") }
         },
-        dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
+        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancelar") } }
     )
 }
 
-// Ejemplo de la clase de datos para Facility
-data class FacilityResource(
-    val name: String,
-    val status: String,
-    val budget: Double,
-    val period: String
-)
