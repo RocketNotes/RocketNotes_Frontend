@@ -19,6 +19,8 @@ fun NavigationHost() {
         composable("notifications") { NotificationsScreen(navController) }
         composable("messages") { MessagesScreen(navController) }
         composable("alumnos") { AlumnosScreen(navController) }
-        composable("profesores") { TeachersScreen(navController) }  // Nueva pantalla de profesores
+        composable("profesores") { TeachersScreen(navController) }
+        composable("facilities") { FacilitiesScreen(navController = navController) }
+
     }
 }

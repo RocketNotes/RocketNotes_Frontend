@@ -92,7 +92,7 @@ fun HomeScreen(navController: NavHostController) {
             ButtonWithIcon(
                 text = "Inventario",
                 icon = Icons.Default.Build,
-                onClick = { navController.navigate("inventario") }
+                onClick = { navController.navigate("facilities") }
             )
 
             // Botón Equipamiento Escolar
