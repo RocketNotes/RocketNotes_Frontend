@@ -179,14 +179,32 @@ fun TeachersScreen(navController: NavHostController) {
                     initialTeacher = teacher,
                     onDismiss = { showEditTeacherDialog = null },
                     onSaveTeacher = { updatedTeacher ->
-                        teachers[index] = updatedTeacher
-                        filteredTeachers = teachers.toList() // Actualiza la lista filtrada
-                        showEditTeacherDialog = null
+                        val call = RetrofitClient.placeHolder.updateTeacher(teacher.id, updatedTeacher, "Bearer $token")
+                        call.enqueue(object : Callback<TeacherResource> {
+                            override fun onResponse(call: Call<TeacherResource>, response: Response<TeacherResource>) {
+                                if (response.isSuccessful) {
+                                    response.body()?.let { savedTeacher ->
+                                        teachers[index] = savedTeacher
+                                        filteredTeachers = teachers.toList()
+                                    }
+                                }
+                                showEditTeacherDialog = null
+                            }
+                            override fun onFailure(call: Call<TeacherResource>, t: Throwable) { showEditTeacherDialog = null }
+                        })
                     },
                     onDeleteTeacher = {
-                        teachers.removeAt(index)
-                        filteredTeachers = teachers.toList() // Actualiza la lista filtrada
-                        showEditTeacherDialog = null
+                        val call = RetrofitClient.placeHolder.deleteTeacher(teacher.id, "Bearer $token")
+                        call.enqueue(object : Callback<Void> {
+                            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                                if (response.isSuccessful) {
+                                    teachers.removeAt(index)
+                                    filteredTeachers = teachers.toList()
+                                }
+                                showEditTeacherDialog = null
+                            }
+                            override fun onFailure(call: Call<Void>, t: Throwable) { showEditTeacherDialog = null }
+                        })
                     }
                 )
             }
@@ -340,6 +358,9 @@ fun EditTeacherDialog(
         dismissButton = {
             OutlinedButton(onClick = onDismiss) {
                 Text("Cancelar")
+            }
+            OutlinedButton(onClick = onDeleteTeacher, colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)) {
+                Text("Eliminar")
             }
         }
     )

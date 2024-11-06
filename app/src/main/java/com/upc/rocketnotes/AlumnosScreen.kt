@@ -22,7 +22,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,7 +29,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -158,12 +156,43 @@ fun AlumnosScreen(navController: NavHostController) {
                     initialMaternalLastName = student.maternalLastName, // Añade el apellido materno
                     onDismiss = { showEditStudentDialog = null },
                     onSaveStudent = { updatedStudent ->
-                        students[index] = updatedStudent
-                        showEditStudentDialog = null
+                        val call = RetrofitClient.placeHolder.updateStudent(student.id, updatedStudent, "Bearer $token")
+                        call.enqueue(object : Callback<StudentResource> {
+                            override fun onResponse(call: Call<StudentResource>, response: Response<StudentResource>) {
+                                if (response.isSuccessful) {
+                                    response.body()?.let { savedStudent ->
+                                        students[index] = savedStudent // Actualizar lista local
+                                    }
+                                } else {
+                                    // Manejar error de respuesta
+                                }
+                                showEditStudentDialog = null
+                            }
+
+                            override fun onFailure(call: Call<StudentResource>, t: Throwable) {
+                                // Manejar error de red
+                                showEditStudentDialog = null
+                            }
+                        })
                     },
                     onDeleteStudent = {
-                        students.removeAt(index)
-                        showEditStudentDialog = null
+                        // Eliminar estudiante del servidor
+                        val call = RetrofitClient.placeHolder.deleteStudent(student.id, "Bearer $token")
+                        call.enqueue(object : Callback<Void> {
+                            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                                if (response.isSuccessful) {
+                                    students.removeAt(index) // Actualizar la lista local
+                                } else {
+                                    // Manejar error de respuesta
+                                }
+                                showEditStudentDialog = null
+                            }
+
+                            override fun onFailure(call: Call<Void>, t: Throwable) {
+                                // Manejar error de red
+                                showEditStudentDialog = null
+                            }
+                        })
                     },
                     classrooms = classrooms
                 )
@@ -297,8 +326,8 @@ fun EditStudentDialog(
                 val updatedStudent = StudentResource(
                     null, // Asigna el ID correcto si lo tienes
                     updatedName,
-                    "", // Pasa los apellidos adecuados si los tienes
-                    "", // Pasa los apellidos adecuados si los tienes
+                    updatedPaternalLastName, // Pasa los apellidos adecuados si los tienes
+                    updatedMaternalLastName, // Pasa los apellidos adecuados si los tienes
                     "", // Pasa el DNI adecuado si lo tienes
                     listOf(classrooms.indexOf(selectedClassroom)) // Convertir a lista de enteros
                 )
@@ -310,6 +339,9 @@ fun EditStudentDialog(
         dismissButton = {
             OutlinedButton(onClick = onDismiss) {
                 Text("Cancelar")
+            }
+            OutlinedButton(onClick = onDeleteStudent, colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)) {
+                Text("Eliminar")
             }
         }
     )
