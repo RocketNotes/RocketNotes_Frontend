@@ -27,7 +27,7 @@ interface PlaceHolder {
     @POST("students")
     fun addStudent(
         @Body student: StudentResource,
-        @Header("Authorization") authHeader: String // Asegúrate de que esto esté incluido
+        @Header("Authorization") authHeader: String
     ): Call<StudentResource>
 
     @DELETE("students/{id}")
@@ -43,14 +43,9 @@ interface PlaceHolder {
     //FACILITIES
     @POST("facilities")
     fun addFacilities(
-        @Body facilitie: FacilitiesResource,
+        @Body facilities: FacilitiesResource,
         @Header("Authorization") authHeader: String
     ):Call<FacilitiesResource>
-
-    @GET("facilities")
-    fun getFacilities(
-        @Header("Authorization") authHeader: String
-    ): Call<List<TeacherResource>>
 
     //TEACHERS
     @GET("teachers")
@@ -100,4 +95,7 @@ interface PlaceHolder {
         @Path("id") id: String,
         @Header("Authorization") authHeader: String
     ): Call<FacilityResource>
+
+    @GET("classrooms")
+    fun getClassrooms(@Header("Authorization") authHeader: String): Call<List<ClassroomResource>>
 }
