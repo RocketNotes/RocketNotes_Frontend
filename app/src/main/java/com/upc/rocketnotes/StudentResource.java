@@ -1,5 +1,7 @@
 package com.upc.rocketnotes;
 
+import static java.lang.Math.random;
+
 import java.util.List;
 
 public class StudentResource {
