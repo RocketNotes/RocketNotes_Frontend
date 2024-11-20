@@ -1,39 +1,66 @@
 package com.upc.rocketnotes;
 
+
 public class Facility {
-    private String name;
-    private String period;
-    private String creation;
-    private int budget;
-    private int status;
+    private Long id;
+    private String period = ""; // Valor predeterminado
+    private Integer budget = 0; // Valor predeterminado
+    private String creation = ""; // Valor predeterminado
+    private String name = ""; // Valor predeterminado
 
     // Constructor
-    public Facility(String name, String period, String creation, int budget, int status) {
-        this.name = name;
+    public Facility(Long id, String period, Integer budget, String creation, String name) {
+        this.id = id;
         this.period = period;
-        this.creation = creation;
         this.budget = budget;
-        this.status = status;
+        this.creation = creation;
+        this.name = name;
     }
+
+    // Constructor vacío (necesario para frameworks como Retrofit)
+    public Facility() {
+    }
+
 
     // Getters y Setters
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public String getPeriod() { return period; }
-    public void setPeriod(String period) { this.period = period; }
-
-    public String getCreation() { return creation; }
-    public void setCreation(String creation) { this.creation = creation; }
-
-    public int getBudget() { return budget; }
-    public void setBudget(int budget) { this.budget = budget; }
-
-    public int getStatus() { return status; }
-    public void setStatus(int status) { this.status = status; }
-
-    // Método para copiar un Facility con valores actualizados
-    public Facility copy(String name, String period, String creation, int budget, int status) {
-        return new Facility(name, period, creation, budget, status);
+    public Long getId() {
+        return id;
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(String period) {
+        this.period = period;
+    }
+
+    public Integer getBudget() {
+        return budget;
+    }
+
+    public void setBudget(Integer budget) {
+        this.budget = budget;
+    }
+
+    public String getCreation() {
+        return creation;
+    }
+
+    public void setCreation(String creation) {
+        this.creation = creation;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
 }

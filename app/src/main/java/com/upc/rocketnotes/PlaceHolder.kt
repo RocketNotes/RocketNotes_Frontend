@@ -47,11 +47,6 @@ interface PlaceHolder {
         @Header("Authorization") authHeader: String
     ):Call<FacilitiesResource>
 
-    @GET("facilities")
-    fun getFacilities(
-        @Header("Authorization") authHeader: String
-    ): Call<List<TeacherResource>>
-
     //TEACHERS
     @GET("teachers")
     fun getTeachers(@Header("Authorization") authHeader: String): Call<List<TeacherResource>>
@@ -71,33 +66,32 @@ interface PlaceHolder {
         @Body teacher: TeacherResource,
         @Header("Authorization") authToken: String
     ): Call<TeacherResource>
-  
-    //FACILITIES
-    @GET("facilities")
-    fun getFacilities(@Header("Authorization") authHeader: String): Call<List<FacilityResource>>
 
-    @POST("facilities")
-    fun addFacility(
-        @Body facility: FacilityResource,
-        @Header("Authorization") authHeader: String
-    ): Call<FacilityResource>
+    @GET("/api/v1/facilities")
+    fun getAllFacilities(@Header("Authorization") token: String): Call<List<Facility>>
 
-    @PUT("facilities/{id}")
-    fun updateFacility(
-        @Path("id") id: String,
-        @Body facility: FacilityResource,
-        @Header("Authorization") authHeader: String
-    ): Call<FacilityResource>
-
-    @DELETE("facilities/{id}")
-    fun deleteFacility(
-        @Path("id") id: String,
-        @Header("Authorization") authHeader: String
-    ): Call<Void>
-
-    @GET("facilities/{id}")
+    @GET("/api/v1/facilities/{id}")
     fun getFacilityById(
-        @Path("id") id: String,
-        @Header("Authorization") authHeader: String
-    ): Call<FacilityResource>
+        @Path("id") id: Long,
+        @Header("Authorization") token: String
+    ): Call<Facility>
+
+    @POST("/api/v1/facilities")
+    fun createFacility(
+        @Body facility: Facility,
+        @Header("Authorization") token: String
+    ): Call<Facility>
+
+    @PUT("/api/v1/facilities/{id}")
+    fun updateFacility(
+        @Path("id") id: Long,
+        @Body facility: Facility,
+        @Header("Authorization") token: String
+    ): Call<Facility>
+
+    @DELETE("/api/v1/facilities/{id}")
+    fun deleteFacility(
+        @Path("id") id: Long,
+        @Header("Authorization") token: String
+    ): Call<Void>
 }
