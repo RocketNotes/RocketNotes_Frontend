@@ -8,20 +8,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,15 +48,16 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlumnosScreen(navController: NavHostController) {
     var searchText by remember { mutableStateOf("") }
     var showAddStudentForm by remember { mutableStateOf(false) }
     var showEditStudentDialog by remember { mutableStateOf<Pair<Int, StudentResource>?>(null) }
     val students = remember { mutableStateListOf<StudentResource>() }
-    val classrooms = remember { listOf("Aula 101", "Aula 102", "Aula 103") }
+    val classrooms = listOf("Aula 101", "Aula 102", "Aula 103")
     val context = LocalContext.current
-    val token = getToken(context) // Obtener el token
+    val token = getToken(context)
 
     // Obtener la lista de alumnos al cargar la pantalla
     LaunchedEffect(Unit) {
@@ -58,10 +66,8 @@ fun AlumnosScreen(navController: NavHostController) {
             override fun onResponse(call: Call<List<StudentResource>>, response: Response<List<StudentResource>>) {
                 if (response.isSuccessful) {
                     response.body()?.let { studentList ->
-                        students.addAll(studentList) // Agregar la lista de alumnos
+                        students.addAll(studentList)
                     }
-                } else {
-                    // Manejar error
                 }
             }
 
@@ -71,17 +77,16 @@ fun AlumnosScreen(navController: NavHostController) {
         })
     }
 
-
-
     Scaffold(
         topBar = { TopNavBar() },
-        bottomBar = { BottomNavBar(navController = navController) },
+        bottomBar = { BottomNavBar(navController) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddStudentForm = true },
-                containerColor = Color.Green
+                containerColor = Color(0xFF1EC089),
+                contentColor = Color.White
             ) {
-                Icon(Icons.Filled.AddCircle, contentDescription = "Agregar Alumno", tint = Color.White)
+                Icon(Icons.Filled.Add, contentDescription = "Agregar Alumno")
             }
         }
     ) { innerPadding ->
@@ -91,40 +96,65 @@ fun AlumnosScreen(navController: NavHostController) {
                 .padding(innerPadding)
                 .padding(20.dp)
         ) {
-            Text(text = "Lista de Alumnos", fontSize = 28.sp)
-            Spacer(modifier = Modifier.height(10.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                TextField(
-                    value = searchText,
-                    onValueChange = { searchText = it },
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Buscar alumno") }
+            Text(
+                text = "Lista de Alumnos",
+                fontSize = 24.sp,
+                color = Color(0xFF1EC089),
+                style = MaterialTheme.typography.titleLarge
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Barra de búsqueda
+            TextField(
+                value = searchText,
+                onValueChange = { searchText = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                label = { Text("Buscar alumno") },
+                colors = TextFieldDefaults.textFieldColors(
+                    containerColor = Color(0xFFF5F5F5),
+                    focusedIndicatorColor = Color(0xFF1EC089)
                 )
-            }
-            Spacer(modifier = Modifier.height(10.dp))
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Lista de alumnos
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 students.forEachIndexed { index, student ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F0F0)),
+                        shape = RoundedCornerShape(8.dp),
+                        elevation = CardDefaults.cardElevation(4.dp)
                     ) {
-                        // Cambiar esta línea para mostrar el nombre completo
-                        Text(text = "${student.firstName} ${student.paternalLastName} ${student.maternalLastName}", fontSize = 20.sp)
-                        IconButton(onClick = { showEditStudentDialog = Pair(index, student) }) {
-                            Icon(Icons.Filled.Edit, contentDescription = "Editar Alumno")
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "${student.firstName} ${student.paternalLastName} ${student.maternalLastName}",
+                                fontSize = 18.sp,
+                                color = Color.Black
+                            )
+                            IconButton(onClick = { showEditStudentDialog = Pair(index, student) }) {
+                                Icon(Icons.Filled.Edit, contentDescription = "Editar Alumno", tint = Color(0xFF1EC089))
+                            }
                         }
                     }
                 }
             }
 
+            // Formulario para agregar estudiante
             if (showAddStudentForm) {
                 AddStudentForm(
                     onDismiss = { showAddStudentForm = false },
@@ -149,11 +179,12 @@ fun AlumnosScreen(navController: NavHostController) {
                 )
             }
 
+            // Dialogo para editar estudiante
             showEditStudentDialog?.let { (index, student) ->
                 EditStudentDialog(
                     initialName = student.firstName,
-                    initialPaternalLastName = student.paternalLastName, // Añade el apellido paterno
-                    initialMaternalLastName = student.maternalLastName, // Añade el apellido materno
+                    initialPaternalLastName = student.paternalLastName,
+                    initialMaternalLastName = student.maternalLastName,
                     onDismiss = { showEditStudentDialog = null },
                     onSaveStudent = { updatedStudent ->
                         val call = RetrofitClient.placeHolder.updateStudent(student.id, updatedStudent, "Bearer $token")
@@ -161,35 +192,28 @@ fun AlumnosScreen(navController: NavHostController) {
                             override fun onResponse(call: Call<StudentResource>, response: Response<StudentResource>) {
                                 if (response.isSuccessful) {
                                     response.body()?.let { savedStudent ->
-                                        students[index] = savedStudent // Actualizar lista local
+                                        students[index] = savedStudent
                                     }
-                                } else {
-                                    // Manejar error de respuesta
                                 }
                                 showEditStudentDialog = null
                             }
 
                             override fun onFailure(call: Call<StudentResource>, t: Throwable) {
-                                // Manejar error de red
                                 showEditStudentDialog = null
                             }
                         })
                     },
                     onDeleteStudent = {
-                        // Eliminar estudiante del servidor
                         val call = RetrofitClient.placeHolder.deleteStudent(student.id, "Bearer $token")
                         call.enqueue(object : Callback<Void> {
                             override fun onResponse(call: Call<Void>, response: Response<Void>) {
                                 if (response.isSuccessful) {
-                                    students.removeAt(index) // Actualizar la lista local
-                                } else {
-                                    // Manejar error de respuesta
+                                    students.removeAt(index)
                                 }
                                 showEditStudentDialog = null
                             }
 
                             override fun onFailure(call: Call<Void>, t: Throwable) {
-                                // Manejar error de red
                                 showEditStudentDialog = null
                             }
                         })

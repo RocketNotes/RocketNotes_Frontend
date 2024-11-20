@@ -4,10 +4,13 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Email
@@ -48,7 +51,6 @@ import kotlinx.coroutines.selects.select
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun HomeScreen(navController: NavHostController) {
-    val robotoFontFamily = FontFamily(Font(R.font.robotoblackitalic))
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = { TopNavBar() },
@@ -58,71 +60,85 @@ fun HomeScreen(navController: NavHostController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp),
+                .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Text(
-                text = "Hola",
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
+                text = "Bienvenido",
+                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                color = Color(0xFF1EC089) // Color principal
             )
 
-            // Botón Profesores
+            // Botones con íconos
             ButtonWithIcon(
                 text = "Profesores",
                 icon = Icons.Default.Person,
-                onClick = { navController.navigate("profesores") }  // Cambiamos la ruta a "profesores"
+                iconColor = Color(0xFF2196F3),
+                onClick = { navController.navigate("profesores") }
             )
 
-            // Botón Alumnos
             ButtonWithIcon(
                 text = "Alumnos",
                 icon = Icons.Default.Face,
+                iconColor = Color(0xFFFF5722),
                 onClick = { navController.navigate("alumnos") }
             )
 
-            // Botón Aulas
             ButtonWithIcon(
                 text = "Aulas",
                 icon = Icons.Default.Place,
+                iconColor = Color(0xFF4CAF50),
                 onClick = { navController.navigate("aulas") }
             )
 
-            // Botón Inventario
             ButtonWithIcon(
                 text = "Facilities",
                 icon = Icons.Default.Build,
+                iconColor = Color(0xFFFFC107),
                 onClick = { navController.navigate("facilities") }
-            )
-
-            // Botón Equipamiento Escolar
-            ButtonWithIcon(
-                text = "Equipamiento Escolar",
-                icon = Icons.Default.Info,
-                onClick = { navController.navigate("equipamiento") }
             )
         }
     }
 }
 
 @Composable
-fun ButtonWithIcon(text: String, icon: ImageVector, onClick: () -> Unit) {
-    val navController = rememberNavController()
-    Button(
-        onClick = onClick,
-        modifier = Modifier.size(width = 350.dp, height = 80.dp),
-        elevation = ButtonDefaults.buttonElevation(8.dp), // Sombra
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.White, // Fondo blanco
-            contentColor = Color.Black // Texto e íconos en negro
-        )
+fun ButtonWithIcon(text: String, icon: ImageVector, iconColor: Color, onClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        Button(
+            onClick = onClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp),
+            shape = RoundedCornerShape(16.dp), // Botones redondeados
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.White,
+                contentColor = iconColor
+            ),
+            elevation = ButtonDefaults.buttonElevation(8.dp) // Sombra para destacar los botones
         ) {
-            Icon(icon, contentDescription = null, tint = Color.Black)
-            Text(text, fontSize = 18.sp)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = text,
+                    tint = iconColor,
+                    modifier = Modifier.size(40.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = text,
+                    fontSize = 16.sp,
+                    color = Color.Black
+                )
+            }
         }
     }
 }
