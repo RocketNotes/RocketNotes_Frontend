@@ -53,7 +53,7 @@ import kotlinx.coroutines.selects.select
 fun HomeScreen(navController: NavHostController) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        topBar = { TopNavBar() },
+        topBar = { TopNavBar(navController) },
         bottomBar = { BottomNavBar(navController = navController) }
     ) { innerPadding ->
         Column(

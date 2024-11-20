@@ -10,8 +10,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.wear.compose.material.ButtonColors
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -44,7 +47,7 @@ fun StudentsClassroomsScreen(navController: NavHostController) {
     }
 
     Scaffold(
-        topBar = { TopNavBar() },
+        topBar = { TopNavBar(navController) },
         bottomBar = { BottomNavBar(navController = navController) } // Barra inferior
     ) { padding ->
         Column(
@@ -66,12 +69,29 @@ fun StudentsClassroomsScreen(navController: NavHostController) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
+                    .weight(1f)
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(students) { student ->
                     StudentCard(student = student)
                 }
+            }
+
+            // Botón "Grabar" al final
+            Button(
+                onClick = { /* Acción para grabar la asistencia */ },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .height(50.dp), // Altura del botón
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF1EC089), // Color principal
+                    contentColor = Color.White // Color del texto
+                ),
+                shape = CircleShape // Botón con forma circular
+            ) {
+                Text("Grabar", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -97,8 +117,10 @@ fun StudentCard(student: StudentResource) {
         ) {
             // Información del estudiante
             Text(
-                text = "Nombre: ${student.firstName} ${student.paternalLastName} ${student.maternalLastName}",
-                style = MaterialTheme.typography.bodyLarge
+                text = "${student.firstName} ${student.paternalLastName} ${student.maternalLastName}",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                fontSize = 24.sp
             )
 
             // Interruptor rectangular
@@ -108,7 +130,7 @@ fun StudentCard(student: StudentResource) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (isAttendanceTaken) "Asistencia tomada" else "Pendiente",
+                    text = if (isAttendanceTaken) "Asistió" else "Ausente",
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (isAttendanceTaken) Color(0xFF4CAF50) else Color(0xFFF44336) // Verde o rojo según el estado
                 )

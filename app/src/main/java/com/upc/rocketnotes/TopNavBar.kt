@@ -1,6 +1,7 @@
 package com.upc.rocketnotes
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
@@ -30,7 +31,7 @@ import androidx.wear.compose.material.Icon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopNavBar(){
+fun TopNavBar(navHostController: NavHostController){
     val robotoFontFamily = FontFamily(Font(R.font.robotoblackitalic))
     CenterAlignedTopAppBar(
         title = {
@@ -46,10 +47,10 @@ fun TopNavBar(){
             )
         },
         actions = {
-            IconButton(onClick = {}) {
+            IconButton(onClick = {navHostController.popBackStack()}) {
                 Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Menu Icon",
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back",
                     tint =  Color(0xFF888888)
                 )
             }

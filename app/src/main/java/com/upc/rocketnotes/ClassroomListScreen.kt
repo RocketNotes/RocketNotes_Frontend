@@ -62,7 +62,7 @@ fun ClassroomListScreen(navController: NavHostController) {
 
     // Estructura con Scaffold
     Scaffold(
-        topBar = { TopNavBar() }, // Barra superior
+        topBar = { TopNavBar(navController) }, // Barra superior
         bottomBar = { BottomNavBar(navController = navController) } // Barra inferior
     ) { paddingValues ->
         Column(

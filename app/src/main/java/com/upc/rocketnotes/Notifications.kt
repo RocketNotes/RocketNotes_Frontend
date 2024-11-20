@@ -20,7 +20,7 @@ fun NotificationsScreen(navController: NavHostController) {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        topBar = { TopNavBar() },
+        topBar = { TopNavBar(navController) },
         bottomBar = {
             BottomNavBar(navController = navController)
         }

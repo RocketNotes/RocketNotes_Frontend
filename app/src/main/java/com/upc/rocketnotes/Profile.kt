@@ -79,7 +79,7 @@ fun ProfileScreen(navController: NavHostController, userId: Long) {
     val primaryColor = Color(0xFF1EC089)
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        topBar = { TopNavBar() },
+        topBar = { TopNavBar(navController) },
         bottomBar = { BottomNavBar(navController = navController) }
     ){
         // Mostrar la interfaz de usuario

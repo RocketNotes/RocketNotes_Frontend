@@ -17,7 +17,7 @@ fun MessagesScreen(navController: NavHostController){
     val robotoFontFamily = FontFamily(Font(R.font.robotoblackitalic))
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        topBar = { TopNavBar()},
+        topBar = { TopNavBar(navController)},
         bottomBar = {
             BottomNavBar(navController = navController)
         }

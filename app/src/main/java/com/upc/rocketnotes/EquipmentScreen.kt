@@ -51,7 +51,7 @@ fun EquipmentScreen(navController: NavHostController) {
     var showEditEquipmentDialog by remember { mutableStateOf<Pair<Int, SchoolEquipmentResource>?>(null) }
 
     Scaffold(
-        topBar = { TopNavBar() },
+        topBar = { TopNavBar(navController) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddEquipmentForm = true },

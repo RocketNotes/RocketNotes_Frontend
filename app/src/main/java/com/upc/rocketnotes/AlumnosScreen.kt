@@ -78,7 +78,7 @@ fun AlumnosScreen(navController: NavHostController) {
     }
 
     Scaffold(
-        topBar = { TopNavBar() },
+        topBar = { TopNavBar(navController) },
         bottomBar = { BottomNavBar(navController) },
         floatingActionButton = {
             FloatingActionButton(

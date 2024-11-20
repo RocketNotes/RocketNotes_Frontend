@@ -90,7 +90,7 @@ fun TeachersScreen(navController: NavHostController) {
     }
 
     Scaffold(
-        topBar = { TopNavBar() },
+        topBar = { TopNavBar(navController) },
         bottomBar = { BottomNavBar(navController = navController) },
         floatingActionButton = {
             FloatingActionButton(
