@@ -1,8 +1,9 @@
 package com.upc.rocketnotes;
 
 public class UserResource {
-    private String username;
-    private String role;
+    Long id;
+    String username;
+    String role;
 
     // Constructor con parámetros
     public UserResource(String username, String role) {

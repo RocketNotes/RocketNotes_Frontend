@@ -4,12 +4,14 @@ import java.util.List;
 
 public class SignInResponse {
 
-    private String username;
-    private String token;
-    private List<String> roles;
+    Long id;
+    String username;
+    String token;
+    List<String> roles;
 
     // Constructor con parámetros
-    public SignInResponse(String username, String token, List<String> roles) {
+    public SignInResponse(Long id, String username, String token, List<String> roles) {
+        this.id = id;
         this.username = username;
         this.token = token;
         this.roles = roles;
@@ -20,6 +22,9 @@ public class SignInResponse {
     }
 
     // Getters y setters
+
+    public Long getId(){return id;}
+
     public String getUsername() {
         return username;
     }

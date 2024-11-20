@@ -1,39 +1,33 @@
 package com.upc.rocketnotes
 
 import android.content.Context
-import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.upc.rocketnotes.ui.theme.RocketNotesTheme
-import androidx.compose.ui.text.font.Font
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.withStyle
 import androidx.navigation.NavHostController
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.withStyle
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -43,29 +37,45 @@ fun LoginScreen(navController: NavHostController) {
     // Estado para almacenar los valores del correo y la contraseña
     var user by remember { mutableStateOf(TextFieldValue("")) }
     var password by remember { mutableStateOf(TextFieldValue("")) }
+    var isLoading by remember { mutableStateOf(false) } // Estado para el indicador de carga
     val robotoFontFamily = FontFamily(Font(R.font.robotoblackitalic))
     val context = LocalContext.current
 
     val retrofit = RetrofitClient.retrofitInstance
     val apiService = retrofit.create(PlaceHolder::class.java)
 
-
     // Estructura de la interfaz
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .background(Color(0xFFFFFFFF)),
+            .background(Color.White),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Título
         Text(
             text = buildAnnotatedString {
-                withStyle(style = SpanStyle(color = Color(0xFF888888), fontSize = 36.sp, fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic, fontFamily = robotoFontFamily)) {
+                withStyle(
+                    style = SpanStyle(
+                        color = Color(0xFF888888),
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontStyle = FontStyle.Italic,
+                        fontFamily = robotoFontFamily
+                    )
+                ) {
                     append("\uD83D\uDDD2\uFE0F ROCKET")
                 }
-                withStyle(style = SpanStyle(color = Color(0xFF1EC089), fontSize = 36.sp, fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic, fontFamily = robotoFontFamily)) {
+                withStyle(
+                    style = SpanStyle(
+                        color = Color(0xFF1EC089),
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontStyle = FontStyle.Italic,
+                        fontFamily = robotoFontFamily
+                    )
+                ) {
                     append("NOTES")
                 }
             },
@@ -73,7 +83,7 @@ fun LoginScreen(navController: NavHostController) {
             modifier = Modifier.offset(y = (-50).dp)
         )
 
-        // Imagen (sustituir por un recurso de imagen)
+        // Imagen (Logo)
         Image(
             painter = painterResource(id = R.drawable.logo),
             contentDescription = "Logo",
@@ -82,17 +92,19 @@ fun LoginScreen(navController: NavHostController) {
                 .padding(bottom = 32.dp),
             contentScale = ContentScale.Fit
         )
+
         // Texto: Iniciar Sesión
         Text(
             text = "Iniciar Sesión",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-            fontFamily = robotoFontFamily,  // Aplicar la fuente Roboto
+            fontFamily = robotoFontFamily,
             textAlign = TextAlign.Start,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 45.dp, bottom = 16.dp), // Ajustar espacio entre el logo y el cuadro de texto
+                .padding(start = 45.dp, bottom = 16.dp)
         )
+
         // Cuadro de texto: Usuario
         OutlinedTextField(
             value = user,
@@ -124,31 +136,39 @@ fun LoginScreen(navController: NavHostController) {
         Text(
             text = "¿Olvidaste tu contraseña?",
             fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,  // Texto en negrita
+            fontWeight = FontWeight.Bold,
             color = Color.Black,
-            textDecoration = TextDecoration.Underline, // Subrayado
+            textDecoration = TextDecoration.Underline,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 45.dp, bottom = 16.dp),
             textAlign = TextAlign.Start
         )
 
+        // Indicador de carga
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))
+        }
+
         // Botón: Ingresar
         Button(
             onClick = {
+                isLoading = true
                 val signInRequest = SignInRequest(user.text, password.text)
                 apiService.signIn(signInRequest).enqueue(object : Callback<SignInResponse> {
                     override fun onResponse(call: Call<SignInResponse>, response: Response<SignInResponse>) {
+                        isLoading = false
                         if (response.isSuccessful) {
                             val signInResponse = response.body()
-                            if (signInResponse != null) {
-                                // Guardar el token en SharedPreferences
+                            if (signInResponse != null && signInResponse.id != null && signInResponse.token != null) {
                                 val sharedPreferences = context.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
                                 val editor = sharedPreferences.edit()
-                                editor.putString("authToken", signInResponse.token) // Guardar el token
+                                editor.putLong("userId", signInResponse.id)
+                                editor.putString("authToken", signInResponse.token)
                                 editor.apply()
-                                // Navegar a la pantalla de éxito
                                 navController.navigate("home")
+                            } else {
+                                Toast.makeText(context, "Error: Datos no válidos en la respuesta", Toast.LENGTH_SHORT).show()
                             }
                         } else {
                             Toast.makeText(context, "Error en el inicio de sesión: ${response.message()}", Toast.LENGTH_SHORT).show()
@@ -156,6 +176,7 @@ fun LoginScreen(navController: NavHostController) {
                     }
 
                     override fun onFailure(call: Call<SignInResponse>, t: Throwable) {
+                        isLoading = false
                         Toast.makeText(context, "Error de red: ${t.message}", Toast.LENGTH_SHORT).show()
                     }
                 })
@@ -165,11 +186,9 @@ fun LoginScreen(navController: NavHostController) {
                 .height(60.dp)
                 .padding(vertical = 8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1EC089)),
-            shape = RoundedCornerShape(5.dp) // Esquinas ligeramente redondeadas
+            shape = RoundedCornerShape(5.dp)
         ) {
-            Text("Ingresar",
-                fontFamily = robotoFontFamily,  // Aplicar la fuente Roboto
-                fontSize = 18.sp)
+            Text("Ingresar", fontFamily = robotoFontFamily, fontSize = 18.sp)
         }
 
         // Botón: Registrarse
@@ -180,15 +199,17 @@ fun LoginScreen(navController: NavHostController) {
                 .height(60.dp)
                 .padding(vertical = 8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1EC089)),
-            shape = RoundedCornerShape(5.dp) // Esquinas ligeramente redondeadas
+            shape = RoundedCornerShape(5.dp)
         ) {
-            Text(
-                "Registrarse",
-                fontFamily = robotoFontFamily,  // Aplicar la fuente Roboto
-                fontSize = 18.sp
-            )
+            Text("Registrarse", fontFamily = robotoFontFamily, fontSize = 18.sp)
         }
     }
+}
+
+// Funciones auxiliares para obtener datos de SharedPreferences
+fun getUserId(context: Context): Long {
+    val sharedPreferences = context.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    return sharedPreferences.getLong("userId", 0L)
 }
 
 fun getToken(context: Context): String? {

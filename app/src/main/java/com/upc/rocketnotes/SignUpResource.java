@@ -4,9 +4,9 @@ import java.util.List;
 
 public class SignUpResource {
 
-    private String username;
-    private String password;
-    private List<String> roles;  // Cambiado de String a List<String> para coincidir con el formato JSON esperado
+    String username;
+    String password;
+    List<String> roles;  // Cambiado de String a List<String> para coincidir con el formato JSON esperado
 
     // Constructor con parámetros
     public SignUpResource(String username, String password, List<String> roles) {

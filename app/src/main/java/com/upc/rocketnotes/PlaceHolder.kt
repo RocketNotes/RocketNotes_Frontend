@@ -19,6 +19,12 @@ interface PlaceHolder {
     @POST("authentication/sign-in")
     fun signIn(@Body signInRequest: SignInRequest): Call<SignInResponse>
 
+    // USER
+
+    @GET("users/{id}")
+    fun getUserById(@Path("id") userId: Long, @Header("Authorization") authToken: String): Call<UserResource>
+
+
     // STUDENTS
     @GET("students")
     fun getStudents(@Header("Authorization") authHeader: String): Call<List<StudentResource>>
